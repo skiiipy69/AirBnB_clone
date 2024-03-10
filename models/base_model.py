@@ -1,12 +1,12 @@
 #!/usr/bin/python3
-""" 0x00. AirBnB clone - The console """
-from . import storage
+"""Defines the BaseModel class."""
+import models
+from uuid import uuid4
 from datetime import datetime
-import uuid
 
 
-class BaseModel():
-    """Defines all common attributes/methods for `BaseModel` its subclasses.
+class BaseModel:
+     """Defines all common attributes/methods for `BaseModel` and its subclasses.
 
     Use of kwargs is currently very brittle and assumes no use of *args,
     and either empty **kwargs, or a dictionary that contains a key for every
@@ -21,62 +21,46 @@ class BaseModel():
             is created, but updated everytime object is changed
 
     """
-    def __init__(self, *args, **kwargs):
-        """`BaseModel` class constructor.
 
-        Project tasks:
-            3. BaseModel
-            4. Create BaseModel from dictionary
+def __init__(self, *args, **kwargs):
+        """Initialize a new BaseModel.
 
+        Args:
+            *args (any): Unused.
+            **kwargs (dict): Key/value pairs of attributes.
         """
-        if kwargs is None or len(kwargs) == 0:
-            self.id = str(uuid.uuid4())
-            self.created_at = datetime.now()
-            self.updated_at = datetime.now()
-            storage.new(self)
+        tform = "%Y-%m-%dT%H:%M:%S.%f"
+        self.id = str(uuid4())
+        self.created_at = datetime.today()
+        self.updated_at = datetime.today()
+        if len(kwargs) != 0:
+            for k, v in kwargs.items():
+                if k == "created_at" or k == "updated_at":
+                    self.__dict__[k] = datetime.strptime(v, tform)
+                else:
+                    self.__dict__[k] = v
         else:
-            ISO_fmt = '%Y-%m-%dT%H:%M:%S.%f'
-            self.created_at = datetime.strptime(kwargs['created_at'], ISO_fmt)
-            self.updated_at = datetime.strptime(kwargs['updated_at'], ISO_fmt)
-            for key, value in kwargs.items():
-                if key not in ('created_at', 'updated_at', '__class__'):
-                    self.__dict__[key] = value
+            models.storage.new(self)
 
-    def __str__(self):
-        """Returns the string representation of BaseModel.
+def save(self):
+        """Update updated_at with the current datetime."""
+        self.updated_at = datetime.today()
+        models.storage.save()
 
-        Returns:
-             '[<class name>] (<self.id>) <self.__dict__>'
+def to_dict(self):
+        """Return the dictionary of the BaseModel instance.
 
-        Project tasks:
-            3. BaseModel
-
+        Includes the key/value pair __class__ representing
+        the class name of the object.
         """
-        return "[{}] ({}) {}".format(
-                self.__class__.__name__, self.id, str(self.__dict__))
+        rdict = self.__dict__.copy()
+        rdict["created_at"] = self.created_at.isoformat()
+        rdict["updated_at"] = self.updated_at.isoformat()
+        rdict["__class__"] = self.__class__.__name__
+        return rdict
 
-    def save(self):
-        """Updates updated_at with the current datetime. Saves updates to JSON
-        serialization.
+def __str__(self):
+        """Return the print/str representation of the BaseModel instance."""
+        clname = self.__class__.__name__
+        return "[{}] ({}) {}".format(clname, self.id, self.__dict__)
 
-        Project tasks:
-            3. BaseModel
-            5. Store first object
-
-        """
-        self.updated_at = datetime.now()
-        storage.save()
-
-    def to_dict(self):
-        """Returns a dictionary containing all keys/values of __dict__
-        of the instance, plus `__class__`, `created-at`, and `updated_at`.
-
-        Project tasks:
-            3. BaseModel
-
-        """
-        my_dict = self.__dict__.copy()
-        my_dict["__class__"] = self.__class__.__name__
-        my_dict["created_at"] = self.created_at.isoformat()
-        my_dict["updated_at"] = self.updated_at.isoformat()
-        return my_dict
